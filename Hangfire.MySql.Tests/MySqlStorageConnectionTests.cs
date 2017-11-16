@@ -133,7 +133,7 @@ namespace Hangfire.MySql.Tests
                 Assert.NotNull(jobId);
                 Assert.NotEmpty(jobId);
 
-                var sqlJob = sql.Query("select * from Job").Single();
+                var sqlJob = sql.Query("select * from HangfireJob").Single();
                 Assert.Equal(jobId, sqlJob.Id.ToString());
                 Assert.Equal(createdAt, sqlJob.CreatedAt);
                 Assert.Equal(null, (int?)sqlJob.StateId);
@@ -151,7 +151,7 @@ namespace Hangfire.MySql.Tests
                 Assert.True(sqlJob.ExpireAt < createdAt.AddDays(1).AddMinutes(1));
 
                 var parameters = sql.Query(
-                    "select * from JobParameter where JobId = @id",
+                    "select * from HangfireJobParameter where JobId = @id",
                     new { id = jobId })
                     .ToDictionary(x => (string)x.Name, x => (string)x.Value);
 
@@ -181,7 +181,7 @@ namespace Hangfire.MySql.Tests
         public void GetJobData_ReturnsResult_WhenJobExists()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, StateName, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, StateName, CreatedAt)
 values (@invocationData, @arguments, @stateName, UTC_TIMESTAMP());
 select last_insert_id() as Id;";
 
@@ -232,15 +232,15 @@ select last_insert_id() as Id;";
         public void GetStateData_ReturnsCorrectData()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, StateName, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, StateName, CreatedAt)
 values ('', '', '', UTC_TIMESTAMP());
 select last_insert_id() into @current_job_id;
-insert into State (JobId, Name, CreatedAt)
+insert into HangfireState (JobId, Name, CreatedAt)
 values (@current_job_id, 'old-state', UTC_TIMESTAMP());
-insert into State (JobId, Name, Reason, Data, CreatedAt)
+insert into HangfireState (JobId, Name, Reason, Data, CreatedAt)
 values (@current_job_id, @name, @reason, @data, UTC_TIMESTAMP());
 select last_insert_id() into @current_state_id;
-update Job set StateId = @current_state_id;
+update HangfireJob set StateId = @current_state_id;
 select @current_job_id as Id;";
 
             UseConnections((sql, connection) =>
@@ -267,15 +267,15 @@ select @current_job_id as Id;";
         public void GetStateData_ReturnsCorrectData_WhenPropertiesAreCamelcased()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, StateName, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, StateName, CreatedAt)
 values ('', '', '', UTC_TIMESTAMP());
-select last_insert_id() into @JobId;
-insert into State (JobId, Name, CreatedAt)
+select last_insert_id() into @HangfireJobId;
+insert into HangfireState (JobId, Name, CreatedAt)
 values (@JobId, 'old-state', UTC_TIMESTAMP());
-insert into State (JobId, Name, Reason, Data, CreatedAt)
+insert into HangfireState (JobId, Name, Reason, Data, CreatedAt)
 values (@JobId, @name, @reason, @data, UTC_TIMESTAMP());
-select last_insert_id() into @StateId;
-update Job set StateId = @StateId;
+select last_insert_id() into @HangfireStateId;
+update HangfireJob set StateId = @StateId;
 select @JobId as Id;";
 
             UseConnections((sql, connection) =>
@@ -300,7 +300,7 @@ select @JobId as Id;";
         public void GetJobData_ReturnsJobLoadException_IfThereWasADeserializationException()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, StateName, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, StateName, CreatedAt)
 values (@invocationData, @arguments, @stateName, UTC_TIMESTAMP());
 select last_insert_id() as Id";
 
@@ -349,7 +349,7 @@ select last_insert_id() as Id";
         public void SetParameters_CreatesNewParameter_WhenParameterWithTheGivenNameDoesNotExists()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, CreatedAt)
 values ('', '', UTC_TIMESTAMP());
 select last_insert_id() as Id";
 
@@ -361,7 +361,7 @@ select last_insert_id() as Id";
                 connection.SetJobParameter(jobId, "Name", "Value");
 
                 var parameter = sql.Query(
-                    "select * from JobParameter where JobId = @id and Name = @name",
+                    "select * from HangfireJobParameter where JobId = @id and Name = @name",
                     new { id = jobId, name = "Name" }).Single();
 
                 Assert.Equal("Value", parameter.Value);
@@ -372,7 +372,7 @@ select last_insert_id() as Id";
         public void SetParameter_UpdatesValue_WhenParameterWithTheGivenName_AlreadyExists()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, CreatedAt)
 values ('', '', UTC_TIMESTAMP());
 select last_insert_id() as Id";
 
@@ -385,7 +385,7 @@ select last_insert_id() as Id";
                 connection.SetJobParameter(jobId, "Name", "AnotherValue");
 
                 var parameter = sql.Query(
-                    "select * from JobParameter where JobId = @id and Name = @name",
+                    "select * from HangfireJobParameter where JobId = @id and Name = @name",
                     new { id = jobId, name = "Name" }).Single();
 
                 Assert.Equal("AnotherValue", parameter.Value);
@@ -396,7 +396,7 @@ select last_insert_id() as Id";
         public void SetParameter_CanAcceptNulls_AsValues()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, CreatedAt)
 values ('', '', UTC_TIMESTAMP());
 select last_insert_id() as Id";
 
@@ -408,7 +408,7 @@ select last_insert_id() as Id";
                 connection.SetJobParameter(jobId, "Name", null);
 
                 var parameter = sql.Query(
-                    "select * from JobParameter where JobId = @id and Name = @name",
+                    "select * from HangfireJobParameter where JobId = @id and Name = @name",
                     new { id = jobId, name = "Name" }).Single();
 
                 Assert.Equal((string)null, parameter.Value);
@@ -453,10 +453,10 @@ select last_insert_id() as Id";
         public void GetParameter_ReturnsParameterValue_WhenJobExists()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, CreatedAt)
 values ('', '', UTC_TIMESTAMP());
 select last_insert_id() into @id;
-insert into JobParameter (JobId, Name, Value)
+insert into HangfireJobParameter (JobId, Name, Value)
 values (@id, @name, @value);
 select @id";
 
@@ -507,7 +507,7 @@ select @id";
         public void GetFirstByLowestScoreFromSet_ReturnsTheValueWithTheLowestScore()
         {
             const string arrangeSql = @"
-insert into `Set` (`Key`, Score, Value)
+insert into `HangfireSet` (`Key`, Score, Value)
 values 
 ('key', 1.0, '1.0'),
 ('key', -1.0, '-1.0'),
@@ -560,7 +560,7 @@ values
                 };
                 connection.AnnounceServer("server", context1);
 
-                var server = sql.Query("select * from Server").Single();
+                var server = sql.Query("select * from HangfireServer").Single();
                 Assert.Equal("server", server.Id);
                 Assert.True(((string)server.Data).StartsWith(
                     "{\"WorkerCount\":4,\"Queues\":[\"critical\",\"default\"],\"StartedAt\":"),
@@ -573,7 +573,7 @@ values
                     WorkerCount = 1000
                 };
                 connection.AnnounceServer("server", context2);
-                var sameServer = sql.Query("select * from Server").Single();
+                var sameServer = sql.Query("select * from HangfireServer").Single();
                 Assert.Equal("server", sameServer.Id);
                 Assert.Contains("1000", sameServer.Data);
             });
@@ -590,7 +590,7 @@ values
         public void RemoveServer_RemovesAServerRecord()
         {
             const string arrangeSql = @"
-insert into Server (Id, Data, LastHeartbeat)
+insert into HangfireServer (Id, Data, LastHeartbeat)
 values 
 ('Server1', '', UTC_TIMESTAMP()),
 ('Server2', '', UTC_TIMESTAMP())";
@@ -601,7 +601,7 @@ values
 
                 connection.RemoveServer("Server1");
 
-                var server = sql.Query("select * from Server").Single();
+                var server = sql.Query("select * from HangfireServer").Single();
                 Assert.NotEqual("Server1", server.Id, StringComparer.OrdinalIgnoreCase);
             });
         }
@@ -617,7 +617,7 @@ values
         public void Heartbeat_UpdatesLastHeartbeat_OfTheServerWithGivenId()
         {
             const string arrangeSql = @"
-insert into Server (Id, Data, LastHeartbeat)
+insert into HangfireServer (Id, Data, LastHeartbeat)
 values
 ('server1', '', '2012-12-12 12:12:12'),
 ('server2', '', '2012-12-12 12:12:12')";
@@ -628,7 +628,7 @@ values
 
                 connection.Heartbeat("server1");
 
-                var servers = sql.Query("select * from Server")
+                var servers = sql.Query("select * from HangfireServer")
                     .ToDictionary(x => (string)x.Id, x => (DateTime)x.LastHeartbeat);
 
                 Assert.NotEqual(2012, servers["server1"].Year);
@@ -647,7 +647,7 @@ values
         public void RemoveTimedOutServers_DoItsWorkPerfectly()
         {
             const string arrangeSql = @"
-insert into Server (Id, Data, LastHeartbeat)
+insert into HangfireServer (Id, Data, LastHeartbeat)
 values (@id, '', @heartbeat)";
 
             UseConnections((sql, connection) =>
@@ -662,7 +662,7 @@ values (@id, '', @heartbeat)";
 
                 connection.RemoveTimedOutServers(TimeSpan.FromHours(15));
 
-                var liveServer = sql.Query("select * from Server").Single();
+                var liveServer = sql.Query("select * from HangfireServer").Single();
                 Assert.Equal("server2", liveServer.Id);
             });
         }
@@ -690,7 +690,7 @@ values (@id, '', @heartbeat)";
         public void GetAllItemsFromSet_ReturnsAllItems()
         {
             const string arrangeSql = @"
-insert into `Set` (`Key`, Score, Value)
+insert into `HangfireSet` (`Key`, Score, Value)
 values (@key, 0.0, @value)";
 
             UseConnections((sql, connection) =>
@@ -749,7 +749,7 @@ values (@key, 0.0, @value)";
                 });
 
                 var result = sql.Query(
-                    "select * from Hash where `Key` = @key",
+                    "select * from HangfireHash where `Key` = @key",
                     new { key = "some-hash" })
                     .ToDictionary(x => (string)x.Field, x => (string)x.Value);
 
@@ -779,7 +779,7 @@ values (@key, 0.0, @value)";
         public void GetAllEntriesFromHash_ReturnsAllKeysAndTheirValues()
         {
             const string arrangeSql = @"
-insert into Hash (`Key`, `Field`, `Value`)
+insert into HangfireHash (`Key`, `Field`, `Value`)
 values (@key, @field, @value)";
 
             UseConnections((sql, connection) =>
@@ -827,7 +827,7 @@ values (@key, @field, @value)";
         public void GetSetCount_ReturnsNumberOfElements_InASet()
         {
             const string arrangeSql = @"
-insert into `Set` (`Key`, `Value`, `Score`)
+insert into `HangfireSet` (`Key`, `Value`, `Score`)
 values (@key, @value, 0.0)";
 
             UseConnections((sql, connection) =>
@@ -858,7 +858,7 @@ values (@key, @value, 0.0)";
         public void GetRangeFromSet_ReturnsPagedElements()
         {
             const string arrangeSql = @"
-insert into `Set` (`Key`, `Value`, `Score`)
+insert into `HangfireSet` (`Key`, `Value`, `Score`)
 values (@Key, @Value, 0.0)";
 
             UseConnections((sql, connection) =>
@@ -883,7 +883,7 @@ values (@Key, @Value, 0.0)";
         public void GetRangeFromSet_ReturnsPagedElements2()
         {
             const string arrangeSql = @"
-insert into `Set` (`Key`, `Value`, `Score`)
+insert into `HangfireSet` (`Key`, `Value`, `Score`)
 values (@Key, @Value, 0.0)";
 
             UseConnections((sql, connection) =>
@@ -931,7 +931,7 @@ values (@Key, @Value, 0.0)";
         public void GetCounter_ReturnsSumOfValues_InCounterTable()
         {
             const string arrangeSql = @"
-insert into Counter (`Key`, `Value`)
+insert into HangfireCounter (`Key`, `Value`)
 values (@key, @value)";
 
             UseConnections((sql, connection) =>
@@ -953,10 +953,10 @@ values (@key, @value)";
         }
 
         [Fact, CleanDatabase]
-        public void GetCounter_IncludesValues_FromCounterAggregateTable()
+        public void GetCounter_IncludesValues_FromHangfireCounterAggregateTable()
         {
             const string arrangeSql = @"
-insert into AggregatedCounter (`Key`, `Value`)
+insert into HangfireAggregatedCounter (`Key`, `Value`)
 values (@key, @value)";
 
             UseConnections((sql, connection) =>
@@ -998,7 +998,7 @@ values (@key, @value)";
         public void GetHashCount_ReturnsNumber_OfHashFields()
         {
             const string arrangeSql = @"
-insert into Hash (`Key`, `Field`)
+insert into HangfireHash (`Key`, `Field`)
 values (@key, @field)";
 
             UseConnections((sql, connection) =>
@@ -1043,7 +1043,7 @@ values (@key, @field)";
         public void GetHashTtl_ReturnsExpirationTimeForHash()
         {
             const string arrangeSql = @"
-insert into Hash (`Key`, `Field`, `ExpireAt`)
+insert into HangfireHash (`Key`, `Field`, `ExpireAt`)
 values (@key, @field, @expireAt)";
 
             UseConnections((sql, connection) =>
@@ -1088,7 +1088,7 @@ values (@key, @field, @expireAt)";
         public void GetListCount_ReturnsTheNumberOfListElements()
         {
             const string arrangeSql = @"
-insert into List (`Key`)
+insert into HangfireList (`Key`)
 values (@key)";
 
             UseConnections((sql, connection) =>
@@ -1133,7 +1133,7 @@ values (@key)";
         public void GetListTtl_ReturnsExpirationTimeForList()
         {
             const string arrangeSql = @"
-insert into List (`Key`, `ExpireAt`)
+insert into HangfireList (`Key`, `ExpireAt`)
 values (@key, @expireAt)";
 
             UseConnections((sql, connection) =>
@@ -1192,7 +1192,7 @@ values (@key, @expireAt)";
         public void GetValueFromHash_ReturnsValue_OfAGivenField()
         {
             const string arrangeSql = @"
-insert into Hash (`Key`, `Field`, `Value`)
+insert into HangfireHash (`Key`, `Field`, `Value`)
 values (@key, @field, @value)";
 
             UseConnections((sql, connection) =>
@@ -1239,7 +1239,7 @@ values (@key, @field, @value)";
         public void GetRangeFromList_ReturnsAllEntries_WithinGivenBounds()
         {
             const string arrangeSql = @"
-insert into List (`Key`, `Value`)
+insert into HangfireList (`Key`, `Value`)
 values (@key, @value)";
 
             UseConnections((sql, connection) =>
@@ -1286,7 +1286,7 @@ values (@key, @value)";
         public void GetAllItemsFromList_ReturnsAllItems_FromAGivenList()
         {
             const string arrangeSql = @"
-insert into List (`Key`, Value)
+insert into HangfireList (`Key`, Value)
 values (@key, @value)";
 
             UseConnections((sql, connection) =>
@@ -1330,7 +1330,7 @@ values (@key, @value)";
         public void GetSetTtl_ReturnsExpirationTime_OfAGivenSet()
         {
             const string arrangeSql = @"
-insert into `Set` (`Key`, `Value`, `ExpireAt`, `Score`)
+insert into `HangfireSet` (`Key`, `Value`, `ExpireAt`, `Score`)
 values (@key, @value, @expireAt, 0.0)";
 
             UseConnections((sql, connection) =>

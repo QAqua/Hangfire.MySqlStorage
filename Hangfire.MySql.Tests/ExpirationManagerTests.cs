@@ -73,7 +73,7 @@ namespace Hangfire.MySql.Tests
                 // Arrange
                 connection
                     .Execute(
-                        "insert into AggregatedCounter (`Key`, Value, ExpireAt) values ('key', 1, @expireAt)", 
+                        "insert into HangfireAggregatedCounter (`Key`, Value, ExpireAt) values ('key', 1, @expireAt)", 
                         new { expireAt = DateTime.UtcNow.AddMonths(-1) });
 
                 var manager = CreateManager(connection);
@@ -82,7 +82,7 @@ namespace Hangfire.MySql.Tests
                 manager.Execute(_token);
 
                 // Assert
-                Assert.Equal(0, connection.Query<int>(@"select count(*) from Counter").Single());
+                Assert.Equal(0, connection.Query<int>(@"select count(*) from HangfireCounter").Single());
             }
         }
 
@@ -93,7 +93,7 @@ namespace Hangfire.MySql.Tests
             {
                 // Arrange
                 connection.Execute(
-                    "insert into Job (InvocationData, Arguments, CreatedAt, ExpireAt) " +
+                    "insert into HangfireJob (InvocationData, Arguments, CreatedAt, ExpireAt) " +
                     "values ('', '', UTC_TIMESTAMP(), @expireAt)", 
                     new { expireAt = DateTime.UtcNow.AddMonths(-1) });
 
@@ -103,7 +103,7 @@ namespace Hangfire.MySql.Tests
                 manager.Execute(_token);
 
                 // Assert
-                Assert.Equal(0, connection.Query<int>(@"select count(*) from Job").Single());
+                Assert.Equal(0, connection.Query<int>(@"select count(*) from HangfireJob").Single());
             }
         }
 
@@ -114,7 +114,7 @@ namespace Hangfire.MySql.Tests
             {
                 // Arrange
                 connection.Execute(
-                    "insert into List (`Key`, ExpireAt) values ('key', @expireAt)", 
+                    "insert into HangfireList (`Key`, ExpireAt) values ('key', @expireAt)", 
                     new { expireAt = DateTime.UtcNow.AddMonths(-1) });
 
                 var manager = CreateManager(connection);
@@ -123,7 +123,7 @@ namespace Hangfire.MySql.Tests
                 manager.Execute(_token);
 
                 // Assert
-                Assert.Equal(0, connection.Query<int>(@"select count(*) from List").Single());
+                Assert.Equal(0, connection.Query<int>(@"select count(*) from HangfireList").Single());
             }
         }
 
@@ -134,7 +134,7 @@ namespace Hangfire.MySql.Tests
             {
                 // Arrange
                 connection.Execute(
-                    "insert into `Set` (`Key`, Score, Value, ExpireAt) values ('key', 0, '', @expireAt)", 
+                    "insert into `HangfireSet` (`Key`, Score, Value, ExpireAt) values ('key', 0, '', @expireAt)", 
                     new { expireAt = DateTime.UtcNow.AddMonths(-1) });
 
                 var manager = CreateManager(connection);
@@ -143,7 +143,7 @@ namespace Hangfire.MySql.Tests
                 manager.Execute(_token);
 
                 // Assert
-                Assert.Equal(0, connection.Query<int>(@"select count(*) from `Set`").Single());
+                Assert.Equal(0, connection.Query<int>(@"select count(*) from `HangfireSet`").Single());
             }
         }
 
@@ -154,7 +154,7 @@ namespace Hangfire.MySql.Tests
             {
                 // Arrange
                 const string createSql = @"
-insert into Hash (`Key`, Field, Value, ExpireAt) 
+insert into HangfireHash (`Key`, Field, Value, ExpireAt) 
 values ('key1', 'field', '', @expireAt),
        ('key2', 'field', '', @expireAt)";
                 connection.Execute(createSql, new { expireAt = DateTime.UtcNow.AddMonths(-1) });
@@ -165,15 +165,15 @@ values ('key1', 'field', '', @expireAt),
                 manager.Execute(_token);
 
                 // Assert
-                Assert.Equal(0, connection.Query<int>(@"select count(*) from Hash").Single());
+                Assert.Equal(0, connection.Query<int>(@"select count(*) from HangfireHash").Single());
             }
         }
 
         private static int CreateExpirationEntry(MySqlConnection connection, DateTime? expireAt)
         {
             const string insertSql = @"
-delete from AggregatedCounter;
-insert into AggregatedCounter (`Key`, Value, ExpireAt)
+delete from HangfireAggregatedCounter;
+insert into HangfireAggregatedCounter (`Key`, Value, ExpireAt)
 values ('key', 1, @expireAt);
 select last_insert_id() as Id";
 
@@ -185,7 +185,7 @@ select last_insert_id() as Id";
         private static bool IsEntryExpired(MySqlConnection connection, int entryId)
         {
             var count = connection.Query<int>(
-                    "select count(*) from AggregatedCounter where Id = @id", new { id = entryId }).Single();
+                    "select count(*) from HangfireAggregatedCounter where Id = @id", new { id = entryId }).Single();
             return count == 0;
         }
 

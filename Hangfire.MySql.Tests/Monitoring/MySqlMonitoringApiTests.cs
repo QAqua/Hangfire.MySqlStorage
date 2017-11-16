@@ -62,7 +62,7 @@ namespace Hangfire.MySql.Tests.Monitoring
             _storage.UseConnection(connection =>
             {
                 connection.Execute(
-                    "insert into Job (InvocationData, Arguments, CreatedAt, StateName) " +
+                    "insert into HangfireJob (InvocationData, Arguments, CreatedAt, StateName) " +
                     "values ('', '', UTC_TIMESTAMP(),'Enqueued');");
 
                 result = _sut.GetStatistics();
@@ -80,7 +80,7 @@ namespace Hangfire.MySql.Tests.Monitoring
             _storage.UseConnection(connection =>
             {
                 connection.Execute(
-                    "insert into Job (InvocationData, Arguments, CreatedAt, StateName) " +
+                    "insert into HangfireJob (InvocationData, Arguments, CreatedAt, StateName) " +
                     "values ('', '', UTC_TIMESTAMP(),'Failed'), " +
                     "       ('', '', UTC_TIMESTAMP(),'Failed');");
 
@@ -99,7 +99,7 @@ namespace Hangfire.MySql.Tests.Monitoring
             _storage.UseConnection(connection =>
             {
                 connection.Execute(
-                    "insert into Job (InvocationData, Arguments, CreatedAt, StateName) " +
+                    "insert into HangfireJob (InvocationData, Arguments, CreatedAt, StateName) " +
                     "values ('', '', UTC_TIMESTAMP(),'Processing')");
 
                 result = _sut.GetStatistics();
@@ -117,7 +117,7 @@ namespace Hangfire.MySql.Tests.Monitoring
             _storage.UseConnection(connection =>
             {
                 connection.Execute(
-                    "insert into Job (InvocationData, Arguments, CreatedAt, StateName) " +
+                    "insert into HangfireJob (InvocationData, Arguments, CreatedAt, StateName) " +
                     "values ('', '', UTC_TIMESTAMP(),'Scheduled')," +
                     "       ('', '', UTC_TIMESTAMP(),'Scheduled')," +
                     "       ('', '', UTC_TIMESTAMP(),'Scheduled');");
@@ -147,7 +147,7 @@ namespace Hangfire.MySql.Tests.Monitoring
             _storage.UseConnection(connection =>
             {
                 connection.Execute(
-                    "insert into Server (Id, Data) " +
+                    "insert into HangfireServer (Id, Data) " +
                     "values (1,'1')," +
                     "       (2,'2'); ");
 
@@ -166,9 +166,9 @@ namespace Hangfire.MySql.Tests.Monitoring
             _storage.UseConnection(connection =>
             {
                 connection.Execute(
-                    "insert into Counter (`Key`,`Value`) " +
+                    "insert into HangfireCounter (`Key`,`Value`) " +
                     "values ('stats:succeeded',1); " +
-                    "insert into AggregatedCounter (`Key`,`Value`) " +
+                    "insert into HangfireAggregatedCounter (`Key`,`Value`) " +
                     "values ('stats:succeeded',10); ");
 
                 result = _sut.GetStatistics();
@@ -186,9 +186,9 @@ namespace Hangfire.MySql.Tests.Monitoring
             _storage.UseConnection(connection =>
             {
                 connection.Execute(
-                    "insert into AggregatedCounter (`Key`,`Value`) " +
+                    "insert into HangfireAggregatedCounter (`Key`,`Value`) " +
                     "values ('stats:deleted',5); " +
-                    "insert into Counter (`Key`,`Value`) " +
+                    "insert into HangfireCounter (`Key`,`Value`) " +
                     "values ('stats:deleted',1)," +
                     "       ('stats:deleted',1); ");
 
@@ -207,7 +207,7 @@ namespace Hangfire.MySql.Tests.Monitoring
             _storage.UseConnection(connection =>
             {
                 connection.Execute(
-                    "insert into `Set` (Id, `Key`, `Value`, Score) " +
+                    "insert into `HangfireSet` (Id, `Key`, `Value`, Score) " +
                     "values (1, 'recurring-jobs', 'test', 0);");
 
                 result = _sut.GetStatistics();
@@ -225,7 +225,7 @@ namespace Hangfire.MySql.Tests.Monitoring
             {
                 var jobId = 
                     connection.ExecuteScalar<string>(
-                    "insert into Job (CreatedAt,InvocationData,Arguments,ExpireAt) " +
+                    "insert into HangfireJob (CreatedAt,InvocationData,Arguments,ExpireAt) " +
                     "values (@createdAt, @invocationData, @arguments,@expireAt);" +
                     "select last_insert_id(); ",
 
@@ -246,7 +246,7 @@ namespace Hangfire.MySql.Tests.Monitoring
             {
                 var jobId =
                     connection.ExecuteScalar<string>(
-                    "insert into Job (CreatedAt,InvocationData,Arguments,ExpireAt) " +
+                    "insert into HangfireJob (CreatedAt,InvocationData,Arguments,ExpireAt) " +
                     "values (@createdAt, @invocationData, @arguments,@expireAt);" +
                     "select last_insert_id(); ",
                     new { createdAt = _createdAt, invocationData = _invocationData, arguments = _arguments, expireAt = _expireAt });
@@ -271,10 +271,10 @@ namespace Hangfire.MySql.Tests.Monitoring
             {
                 var jobId =
                     connection.ExecuteScalar<string>(
-                    "insert into Job (CreatedAt,InvocationData,Arguments,ExpireAt) " +
+                    "insert into HangfireJob (CreatedAt,InvocationData,Arguments,ExpireAt) " +
                     "values (@createdAt, @invocationData, @arguments,@expireAt);" +
                     "set @jobId = last_insert_id(); " +
-                    "insert into JobParameter (JobId, Name, Value) " +
+                    "insert into HangfireJobParameter (JobId, Name, Value) " +
                     "values (@jobId, 'CurrentUICulture', 'en-US')," +
                     "       (@jobId, 'CurrentCulture', 'lt-LT');" +
                     "select @jobId;",
@@ -299,10 +299,10 @@ namespace Hangfire.MySql.Tests.Monitoring
             {
                 var jobId =
                     connection.ExecuteScalar<string>(
-                    "insert into Job (CreatedAt,InvocationData,Arguments,ExpireAt) " +
+                    "insert into HangfireJob (CreatedAt,InvocationData,Arguments,ExpireAt) " +
                     "values (@createdAt, @invocationData, @arguments,@expireAt);" +
                     "set @jobId = last_insert_id(); " +
-                    "insert into State (JobId, Name, CreatedAt, Data) " +
+                    "insert into HangfireState (JobId, Name, CreatedAt, Data) " +
                     "values (@jobId, @jobStateName, @createdAt, @stateData);" +
                     "select @jobId;",
 

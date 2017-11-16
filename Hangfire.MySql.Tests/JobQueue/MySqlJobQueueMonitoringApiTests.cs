@@ -39,12 +39,12 @@ namespace Hangfire.MySql.Tests.JobQueue
             _storage.UseConnection(connection =>
             {
                 connection.Execute(
-                    "insert into JobQueue (JobId, Queue) " +
+                    "insert into HangfireJobQueue (JobId, Queue) " +
                     "values (1, @queue);", new { queue = _queue });
 
                 result = _sut.GetEnqueuedAndFetchedCount(_queue);
 
-                connection.Execute("delete from JobQueue");
+                connection.Execute("delete from HangfireJobQueue");
             });
 
             Assert.Equal(1, result.EnqueuedCount);
@@ -68,13 +68,13 @@ namespace Hangfire.MySql.Tests.JobQueue
                 for (var i = 1; i <= 10; i++)
                 {
                     connection.Execute(
-                        "insert into JobQueue (JobId, Queue) " +
+                        "insert into HangfireJobQueue (JobId, Queue) " +
                         "values (@jobId, @queue);", new {jobId = i, queue = _queue});
                 }
 
                 result = _sut.GetEnqueuedJobIds(_queue, 3, 2).ToArray();
 
-                connection.Execute("delete from JobQueue");
+                connection.Execute("delete from HangfireJobQueue");
             });
             
             Assert.Equal(2, result.Length);

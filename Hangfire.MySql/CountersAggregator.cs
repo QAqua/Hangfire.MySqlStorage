@@ -26,7 +26,7 @@ namespace Hangfire.MySql
 
         public void Execute(CancellationToken cancellationToken)
         {
-            Logger.DebugFormat("Aggregating records in 'Counter' table...");
+            Logger.DebugFormat("Aggregating records in 'HangfireCounter' table...");
 
             int removedCount = 0;
 
@@ -60,18 +60,18 @@ namespace Hangfire.MySql
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 START TRANSACTION;
 
-INSERT INTO AggregatedCounter (`Key`, Value, ExpireAt)
+INSERT INTO HangfireAggregatedCounter (`Key`, Value, ExpireAt)
     SELECT `Key`, SUM(Value) as Value, MAX(ExpireAt) AS ExpireAt 
     FROM (
             SELECT `Key`, Value, ExpireAt
-            FROM Counter
+            FROM HangfireCounter
             LIMIT @count) tmp
 	GROUP BY `Key`
         ON DUPLICATE KEY UPDATE 
             Value = Value + VALUES(Value),
             ExpireAt = GREATEST(ExpireAt,VALUES(ExpireAt));
 
-DELETE FROM `Counter`
+DELETE FROM `HangfireCounter`
 LIMIT @count;
 
 COMMIT;";

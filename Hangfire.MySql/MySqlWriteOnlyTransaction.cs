@@ -35,7 +35,7 @@ namespace Hangfire.MySql
 
             QueueCommand(x => 
                 x.Execute(
-                    "update Job set ExpireAt = @expireAt where Id = @id",
+                    "update HangfireJob set ExpireAt = @expireAt where Id = @id",
                     new { expireAt = DateTime.UtcNow.Add(expireIn), id = jobId }));
         }
         
@@ -47,7 +47,7 @@ namespace Hangfire.MySql
 
             QueueCommand(x => 
                 x.Execute(
-                    "update Job set ExpireAt = NULL where Id = @id",
+                    "update HangfireJob set ExpireAt = NULL where Id = @id",
                     new { id = jobId }));
         }
 
@@ -58,9 +58,9 @@ namespace Hangfire.MySql
             AcquireStateLock();
             AcquireJobLock();
             QueueCommand(x => x.Execute(
-                "insert into State (JobId, Name, Reason, CreatedAt, Data) " +
+                "insert into HangfireState (JobId, Name, Reason, CreatedAt, Data) " +
                 "values (@jobId, @name, @reason, @createdAt, @data); " +
-                "update Job set StateId = last_insert_id(), StateName = @name where Id = @id;",
+                "update HangfireJob set StateId = last_insert_id(), StateName = @name where Id = @id;",
                 new
                 {
                     jobId = jobId,
@@ -78,7 +78,7 @@ namespace Hangfire.MySql
 
             AcquireStateLock();
             QueueCommand(x => x.Execute(
-                "insert into State (JobId, Name, Reason, CreatedAt, Data) " +
+                "insert into HangfireState (JobId, Name, Reason, CreatedAt, Data) " +
                 "values (@jobId, @name, @reason, @createdAt, @data)",
                 new
                 {
@@ -107,7 +107,7 @@ namespace Hangfire.MySql
             AcquireCounterLock();
             QueueCommand(x => 
                 x.Execute(
-                    "insert into Counter (`Key`, `Value`) values (@key, @value)",
+                    "insert into HangfireCounter (`Key`, `Value`) values (@key, @value)",
                     new { key, value = +1 }));
             
         }
@@ -120,7 +120,7 @@ namespace Hangfire.MySql
             AcquireCounterLock();
             QueueCommand(x => 
                 x.Execute(
-                    "insert into Counter (`Key`, `Value`, `ExpireAt`) values (@key, @value, @expireAt)",
+                    "insert into HangfireCounter (`Key`, `Value`, `ExpireAt`) values (@key, @value, @expireAt)",
                     new { key, value = +1, expireAt = DateTime.UtcNow.Add(expireIn) }));
         }
 
@@ -131,7 +131,7 @@ namespace Hangfire.MySql
             AcquireCounterLock();
             QueueCommand(x => 
                 x.Execute(
-                    "insert into Counter (`Key`, `Value`) values (@key, @value)",
+                    "insert into HangfireCounter (`Key`, `Value`) values (@key, @value)",
                     new { key, value = -1 }));
         }
 
@@ -142,7 +142,7 @@ namespace Hangfire.MySql
             AcquireCounterLock();
             QueueCommand(x => 
                 x.Execute(
-                    "insert into Counter (`Key`, `Value`, `ExpireAt`) values (@key, @value, @expireAt)",
+                    "insert into HangfireCounter (`Key`, `Value`, `ExpireAt`) values (@key, @value, @expireAt)",
                     new { key, value = -1, expireAt = DateTime.UtcNow.Add(expireIn) }));
         }
 
@@ -157,7 +157,7 @@ namespace Hangfire.MySql
 
             AcquireSetLock();
             QueueCommand(x => x.Execute(
-                "INSERT INTO `Set` (`Key`, `Value`, `Score`) " +
+                "INSERT INTO `HangfireSet` (`Key`, `Value`, `Score`) " +
                 "VALUES (@Key, @Value, @Score) " +
                 "ON DUPLICATE KEY UPDATE `Score` = @Score",
                 new { key, value, score }));
@@ -173,18 +173,18 @@ namespace Hangfire.MySql
             AcquireSetLock();
             QueueCommand(x => 
                 x.Execute(
-                    "insert into `Set` (`Key`, Value, Score) values (@key, @value, 0.0)", 
+                    "insert into `HangfireSet` (`Key`, Value, Score) values (@key, @value, 0.0)", 
                     items.Select(value => new { key = key, value = value }).ToList()));
         }
 
 
         public override void RemoveFromSet(string key, string value)
         {
-            Logger.TraceFormat("RemoveFromSet key={0} value={1}", key, value);
+            Logger.TraceFormat("RemoveFromHangfireSet key={0} value={1}", key, value);
 
             AcquireSetLock();
             QueueCommand(x => x.Execute(
-                "delete from `Set` where `Key` = @key and Value = @value",
+                "delete from `HangfireSet` where `Key` = @key and Value = @value",
                 new { key, value }));
         }
 
@@ -197,7 +197,7 @@ namespace Hangfire.MySql
             AcquireSetLock();
             QueueCommand(x => 
                 x.Execute(
-                    "update `Set` set ExpireAt = @expireAt where `Key` = @key", 
+                    "update `HangfireSet` set ExpireAt = @expireAt where `Key` = @key", 
                     new { key = key, expireAt = DateTime.UtcNow.Add(expireIn) }));
         }
 
@@ -207,7 +207,7 @@ namespace Hangfire.MySql
 
             AcquireListLock();
             QueueCommand(x => x.Execute(
-                "insert into List (`Key`, Value) values (@key, @value)",
+                "insert into HangfireList (`Key`, Value) values (@key, @value)",
                 new { key, value }));
         }
 
@@ -221,17 +221,17 @@ namespace Hangfire.MySql
             AcquireListLock();
             QueueCommand(x => 
                 x.Execute(
-                    "update List set ExpireAt = @expireAt where `Key` = @key", 
+                    "update HangfireList set ExpireAt = @expireAt where `Key` = @key", 
                     new { key = key, expireAt = DateTime.UtcNow.Add(expireIn) }));
         }
 
         public override void RemoveFromList(string key, string value)
         {
-            Logger.TraceFormat("RemoveFromList key={0} value={1}", key, value);
+            Logger.TraceFormat("RemoveFromHangfireList key={0} value={1}", key, value);
 
             AcquireListLock();
             QueueCommand(x => x.Execute(
-                "delete from List where `Key` = @key and Value = @value",
+                "delete from HangfireList where `Key` = @key and Value = @value",
                 new { key, value }));
         }
 
@@ -243,9 +243,9 @@ namespace Hangfire.MySql
             QueueCommand(x => x.Execute(
                 @"
 delete lst
-from List lst
+from HangfireList lst
 	inner join (SELECT tmp.Id, @rownum := @rownum + 1 AS rank
-		  		FROM List tmp, 
+		  		FROM HangfireList tmp, 
        				(SELECT @rownum := 0) r ) ranked on ranked.Id = lst.Id
 where lst.Key = @key
     and ranked.rank not between @start and @end",
@@ -261,7 +261,7 @@ where lst.Key = @key
             AcquireHashLock();
             QueueCommand(x => 
                 x.Execute(
-                    "update Hash set ExpireAt = null where `Key` = @key", new { key = key }));
+                    "update HangfireHash set ExpireAt = null where `Key` = @key", new { key = key }));
         }
 
         public override void PersistSet(string key)
@@ -273,7 +273,7 @@ where lst.Key = @key
             AcquireSetLock();
             QueueCommand(x => 
                 x.Execute(
-                    "update `Set` set ExpireAt = null where `Key` = @key", new { key = key }));
+                    "update `HangfireSet` set ExpireAt = null where `Key` = @key", new { key = key }));
         }
 
         public override void RemoveSet(string key)
@@ -285,7 +285,7 @@ where lst.Key = @key
             AcquireSetLock();
             QueueCommand(x => 
                 x.Execute(
-                    "delete from `Set` where `Key` = @key", new { key = key }));
+                    "delete from `HangfireSet` where `Key` = @key", new { key = key }));
         }
 
         public override void PersistList(string key)
@@ -297,7 +297,7 @@ where lst.Key = @key
             AcquireListLock();
             QueueCommand(x => 
                 x.Execute(
-                    "update List set ExpireAt = null where `Key` = @key", new { key = key }));
+                    "update HangfireList set ExpireAt = null where `Key` = @key", new { key = key }));
         }
 
         public override void SetRangeInHash(string key, IEnumerable<KeyValuePair<string, string>> keyValuePairs)
@@ -310,7 +310,7 @@ where lst.Key = @key
             AcquireHashLock();
             QueueCommand(x => 
                 x.Execute(
-                    "insert into Hash (`Key`, Field, Value) " +
+                    "insert into HangfireHash (`Key`, Field, Value) " +
                     "values (@key, @field, @value) " +
                     "on duplicate key update Value = @value",
                     keyValuePairs.Select(y => new { key = key, field = y.Key, value = y.Value })));
@@ -325,7 +325,7 @@ where lst.Key = @key
             AcquireHashLock();
             QueueCommand(x => 
                 x.Execute(
-                    "update `Hash` set ExpireAt = @expireAt where `Key` = @key", 
+                    "update `HangfireHash` set ExpireAt = @expireAt where `Key` = @key", 
                     new { key = key, expireAt = DateTime.UtcNow.Add(expireIn) }));
         }
 
@@ -337,7 +337,7 @@ where lst.Key = @key
 
             AcquireHashLock();
             QueueCommand(x => x.Execute(
-                "delete from Hash where `Key` = @key", new { key }));
+                "delete from HangfireHash where `Key` = @key", new { key }));
         }
 
         public override void Commit()
@@ -360,32 +360,32 @@ where lst.Key = @key
         
         private void AcquireJobLock()
         {
-            AcquireLock(String.Format("Job"));
+            AcquireLock(String.Format("HangfireJob"));
         }
 
         private void AcquireSetLock()
         {
-            AcquireLock(String.Format("Set"));
+            AcquireLock(String.Format("HangfireSet"));
         }
         
         private void AcquireListLock()
         {
-            AcquireLock(String.Format("List"));
+            AcquireLock(String.Format("HangfireList"));
         }
 
         private void AcquireHashLock()
         {
-            AcquireLock(String.Format("Hash"));
+            AcquireLock(String.Format("HangfireHash"));
         }
         
         private void AcquireStateLock()
         {
-            AcquireLock(String.Format("State"));
+            AcquireLock(String.Format("HangfireState"));
         }
 
         private void AcquireCounterLock()
         {
-            AcquireLock(String.Format("Counter"));
+            AcquireLock(String.Format("HangfireCounter"));
         }
         private void AcquireLock(string resource)
         {

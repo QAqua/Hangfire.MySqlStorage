@@ -55,7 +55,7 @@ namespace Hangfire.MySql.JobQueue
 
             //todo: unit test
             _connection.Execute(
-                "delete from JobQueue " +
+                "delete from HangfireJobQueue " +
                 "where Id = @id",
                 new
                 {
@@ -71,7 +71,7 @@ namespace Hangfire.MySql.JobQueue
 
             //todo: unit test
             _connection.Execute(
-                "update JobQueue set FetchedAt = null " +
+                "update HangfireJobQueue set FetchedAt = null " +
                 "where Id = @id",
                 new
                 {

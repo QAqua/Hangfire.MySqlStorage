@@ -29,7 +29,7 @@ namespace Hangfire.MySql.Tests
         public void CountersAggregatorExecutesProperly()
         {
             const string createSql = @"
-insert into Counter (`Key`, Value, ExpireAt) 
+insert into HangfireCounter (`Key`, Value, ExpireAt) 
 values ('key', 1, @expireAt)";
 
             _storage.UseConnection(connection =>
@@ -44,7 +44,7 @@ values ('key', 1, @expireAt)";
                 _sut.Execute(cts.Token);
 
                 // Assert
-                Assert.Equal(1, connection.Query<int>(@"select count(*) from AggregatedCounter").Single());
+                Assert.Equal(1, connection.Query<int>(@"select count(*) from HangfireAggregatedCounter").Single());
             });
         }
     }

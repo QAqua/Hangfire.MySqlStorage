@@ -33,7 +33,7 @@ namespace Hangfire.MySql
 
         private static bool TablesExists(MySqlConnection connection)
         {
-            return connection.ExecuteScalar<string>("SHOW TABLES LIKE 'Job';") != null;            
+            return connection.ExecuteScalar<string>("SHOW TABLES LIKE 'HangfireJob';") != null;            
         }
 
         private static string GetStringResource(Assembly assembly, string resourceName)

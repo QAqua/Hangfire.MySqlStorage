@@ -104,7 +104,7 @@ namespace Hangfire.MySql.Tests.JobQueue
         public void Dequeue_ShouldFetchAJob_FromTheSpecifiedQueue()
         {
             const string arrangeSql = @"
-insert into JobQueue (JobId, Queue)
+insert into HangfireJobQueue (JobId, Queue)
 values (@jobId, @queue);
 select last_insert_id() as Id;";
 
@@ -131,11 +131,11 @@ select last_insert_id() as Id;";
         public void Dequeue_ShouldDeleteAJob()
         {
             const string arrangeSql = @"
-delete from JobQueue;
-delete from Job;
-insert into Job (InvocationData, Arguments, CreatedAt)
+delete from HangfireJobQueue;
+delete from HangfireJob;
+insert into HangfireJob (InvocationData, Arguments, CreatedAt)
 values (@invocationData, @arguments, UTC_TIMESTAMP());
-insert into JobQueue (JobId, Queue)
+insert into HangfireJobQueue (JobId, Queue)
 values (last_insert_id(), @queue)";
 
             // Arrange
@@ -156,7 +156,7 @@ values (last_insert_id(), @queue)";
                 // Assert
                 Assert.NotNull(payload);
 
-                var jobInQueue = connection.Query("select * from JobQueue").SingleOrDefault();
+                var jobInQueue = connection.Query("select * from HangfireJobQueue").SingleOrDefault();
                 Assert.Null(jobInQueue);
             });
         }
@@ -165,9 +165,9 @@ values (last_insert_id(), @queue)";
         public void Dequeue_ShouldFetchATimedOutJobs_FromTheSpecifiedQueue()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, CreatedAt)
 values (@invocationData, @arguments, UTC_TIMESTAMP());
-insert into JobQueue (JobId, Queue, FetchedAt)
+insert into HangfireJobQueue (JobId, Queue, FetchedAt)
 values (last_insert_id(), @queue, @fetchedAt)";
 
             // Arrange
@@ -198,15 +198,15 @@ values (last_insert_id(), @queue, @fetchedAt)";
         public void Dequeue_ShouldSetFetchedAt_OnlyForTheFetchedJob()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, CreatedAt)
 values (@invocationData, @arguments, UTC_TIMESTAMP());
-insert into JobQueue (JobId, Queue)
+insert into HangfireJobQueue (JobId, Queue)
 values (last_insert_id(), @queue)";
 
             // Arrange
             _storage.UseConnection(connection =>
             {
-                connection.Execute("delete from JobQueue; delete from Job;");
+                connection.Execute("delete from HangfireJobQueue; delete from HangfireJob;");
 
                 connection.Execute(
                     arrangeSql,
@@ -224,7 +224,7 @@ values (last_insert_id(), @queue)";
 
                 // Assert
                 var otherJobFetchedAt = connection.Query<DateTime?>(
-                    "select FetchedAt from JobQueue where JobId != @id",
+                    "select FetchedAt from HangfireJobQueue where JobId != @id",
                     new { id = payload.JobId }).Single();
 
                 Assert.Null(otherJobFetchedAt);
@@ -235,14 +235,14 @@ values (last_insert_id(), @queue)";
         public void Dequeue_ShouldFetchJobs_OnlyFromSpecifiedQueues()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, CreatedAt)
 values (@invocationData, @arguments, UTC_TIMESTAMP());
-insert into JobQueue (JobId, Queue)
+insert into HangfireJobQueue (JobId, Queue)
 values (last_insert_id(), @queue)";
 
             _storage.UseConnection(connection =>
             {
-                connection.Execute("delete from JobQueue; delete from Job;");
+                connection.Execute("delete from HangfireJobQueue; delete from HangfireJob;");
                 var queue = CreateJobQueue(connection);
 
                 connection.Execute(
@@ -260,9 +260,9 @@ values (last_insert_id(), @queue)";
         public void Dequeue_ShouldFetchJobs_FromMultipleQueues()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, CreatedAt)
 values (@invocationData, @arguments, UTC_TIMESTAMP());
-insert into JobQueue (JobId, Queue)
+insert into HangfireJobQueue (JobId, Queue)
 values (last_insert_id(), @queue)";
 
             _storage.UseConnection(connection =>
@@ -298,13 +298,13 @@ values (last_insert_id(), @queue)";
         {
             _storage.UseConnection(connection =>
             {
-                connection.Execute("delete from JobQueue");
+                connection.Execute("delete from HangfireJobQueue");
 
                 var queue = CreateJobQueue(connection);
 
                 queue.Enqueue(connection, "default", "1");
 
-                var record = connection.Query("select * from JobQueue").Single();
+                var record = connection.Query("select * from HangfireJobQueue").Single();
                 Assert.Equal("1", record.JobId.ToString());
                 Assert.Equal("default", record.Queue);
                 Assert.Null(record.FetchedAt);

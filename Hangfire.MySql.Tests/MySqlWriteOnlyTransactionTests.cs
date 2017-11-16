@@ -37,7 +37,7 @@ namespace Hangfire.MySql.Tests
         public void ExpireJob_SetsJobExpirationData()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, CreatedAt)
 values ('', '', UTC_TIMESTAMP());
 select last_insert_id() as Id";
 
@@ -60,7 +60,7 @@ select last_insert_id() as Id";
         public void PersistJob_ClearsTheJobExpirationData()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, CreatedAt, ExpireAt)
+insert into HangfireJob (InvocationData, Arguments, CreatedAt, ExpireAt)
 values ('', '', UTC_TIMESTAMP(), UTC_TIMESTAMP());
 select last_insert_id() as Id";
 
@@ -83,7 +83,7 @@ select last_insert_id() as Id";
         public void SetJobState_AppendsAStateAndSetItToTheJob()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, CreatedAt)
 values ('', '', UTC_TIMESTAMP());
 select last_insert_id() as Id";
 
@@ -108,7 +108,7 @@ select last_insert_id() as Id";
                 Assert.Null(anotherJob.StateName);
                 Assert.Null(anotherJob.StateId);
 
-                var jobState = sql.Query("select * from State").Single();
+                var jobState = sql.Query("select * from HangfireState").Single();
                 Assert.Equal((string)jobId, jobState.JobId.ToString());
                 Assert.Equal("State", jobState.Name);
                 Assert.Equal("Reason", jobState.Reason);
@@ -121,7 +121,7 @@ select last_insert_id() as Id";
         public void AddJobState_JustAddsANewRecordInATable()
         {
             const string arrangeSql = @"
-insert into Job (InvocationData, Arguments, CreatedAt)
+insert into HangfireJob (InvocationData, Arguments, CreatedAt)
 values ('', '', UTC_TIMESTAMP());
 select last_insert_id() as Id";
 
@@ -141,7 +141,7 @@ select last_insert_id() as Id";
                 Assert.Null(job.StateName);
                 Assert.Null(job.StateId);
 
-                var jobState = sql.Query("select * from State").Single();
+                var jobState = sql.Query("select * from HangfireState").Single();
                 Assert.Equal((string)jobId, jobState.JobId.ToString());
                 Assert.Equal("State", jobState.Name);
                 Assert.Equal("Reason", jobState.Reason);
@@ -171,7 +171,7 @@ select last_insert_id() as Id";
         private static dynamic GetTestJob(IDbConnection connection, string jobId)
         {
             return connection
-                .Query("select * from Job where Id = @id", new { id = jobId })
+                .Query("select * from HangfireJob where Id = @id", new { id = jobId })
                 .Single();
         }
 
@@ -182,7 +182,7 @@ select last_insert_id() as Id";
             {
                 Commit(sql, x => x.IncrementCounter("my-key"));
 
-                var record = sql.Query("select * from Counter").Single();
+                var record = sql.Query("select * from HangfireCounter").Single();
                 
                 Assert.Equal("my-key", record.Key);
                 Assert.Equal(1, record.Value);
@@ -197,7 +197,7 @@ select last_insert_id() as Id";
             {
                 Commit(sql, x => x.IncrementCounter("my-key", TimeSpan.FromDays(1)));
 
-                var record = sql.Query("select * from Counter").Single();
+                var record = sql.Query("select * from HangfireCounter").Single();
 
                 Assert.Equal("my-key", record.Key);
                 Assert.Equal(1, record.Value);
@@ -221,7 +221,7 @@ select last_insert_id() as Id";
                     x.IncrementCounter("my-key");
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from Counter").Single();
+                var recordCount = sql.Query<int>("select count(*) from HangfireCounter").Single();
                 
                 Assert.Equal(2, recordCount);
             });
@@ -234,7 +234,7 @@ select last_insert_id() as Id";
             {
                 Commit(sql, x => x.DecrementCounter("my-key"));
 
-                var record = sql.Query("select * from Counter").Single();
+                var record = sql.Query("select * from HangfireCounter").Single();
 
                 Assert.Equal("my-key", record.Key);
                 Assert.Equal(-1, record.Value);
@@ -249,7 +249,7 @@ select last_insert_id() as Id";
             {
                 Commit(sql, x => x.DecrementCounter("my-key", TimeSpan.FromDays(1)));
 
-                var record = sql.Query("select * from Counter").Single();
+                var record = sql.Query("select * from HangfireCounter").Single();
 
                 Assert.Equal("my-key", record.Key);
                 Assert.Equal(-1, record.Value);
@@ -273,7 +273,7 @@ select last_insert_id() as Id";
                     x.DecrementCounter("my-key");
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from Counter").Single();
+                var recordCount = sql.Query<int>("select count(*) from HangfireCounter").Single();
 
                 Assert.Equal(2, recordCount);
             });
@@ -286,7 +286,7 @@ select last_insert_id() as Id";
             {
                 Commit(sql, x => x.AddToSet("my-key", "my-value"));
 
-                var record = sql.Query("select * from `Set`").Single();
+                var record = sql.Query("select * from `HangfireSet`").Single();
 
                 Assert.Equal("my-key", record.Key);
                 Assert.Equal("my-value", record.Value);
@@ -305,7 +305,7 @@ select last_insert_id() as Id";
                     x.AddToSet("my-key", "another-value");
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from `Set`").Single();
+                var recordCount = sql.Query<int>("select count(*) from `HangfireSet`").Single();
 
                 Assert.Equal(2, recordCount);
             });
@@ -322,7 +322,7 @@ select last_insert_id() as Id";
                     x.AddToSet("my-key", "my-value");
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from `Set`").Single();
+                var recordCount = sql.Query<int>("select count(*) from `HangfireSet`").Single();
                 
                 Assert.Equal(1, recordCount);
             });
@@ -335,7 +335,7 @@ select last_insert_id() as Id";
             {
                 Commit(sql, x => x.AddToSet("my-key", "my-value", 3.2));
 
-                var record = sql.Query("select * from `Set`").Single();
+                var record = sql.Query("select * from `HangfireSet`").Single();
 
                 Assert.Equal("my-key", record.Key);
                 Assert.Equal("my-value", record.Value);
@@ -354,7 +354,7 @@ select last_insert_id() as Id";
                     x.AddToSet("my-key", "my-value", 3.2);
                 });
 
-                var record = sql.Query("select * from `Set`").Single();
+                var record = sql.Query("select * from `HangfireSet`").Single();
 
                 Assert.Equal(3.2, record.Score, 3);
             });
@@ -371,7 +371,7 @@ select last_insert_id() as Id";
                     x.RemoveFromSet("my-key", "my-value");
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from `Set`").Single();
+                var recordCount = sql.Query<int>("select count(*) from `HangfireSet`").Single();
 
                 Assert.Equal(0, recordCount);
             });
@@ -388,7 +388,7 @@ select last_insert_id() as Id";
                     x.RemoveFromSet("my-key", "different-value");
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from `Set`").Single();
+                var recordCount = sql.Query<int>("select count(*) from `HangfireSet`").Single();
 
                 Assert.Equal(1, recordCount);
             });
@@ -405,7 +405,7 @@ select last_insert_id() as Id";
                     x.RemoveFromSet("different-key", "my-value");
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from `Set`").Single();
+                var recordCount = sql.Query<int>("select count(*) from `HangfireSet`").Single();
 
                 Assert.Equal(1, recordCount);
             });
@@ -418,7 +418,7 @@ select last_insert_id() as Id";
             {
                 Commit(sql, x => x.InsertToList("my-key", "my-value"));
 
-                var record = sql.Query("select * from List").Single();
+                var record = sql.Query("select * from HangfireList").Single();
 
                 Assert.Equal("my-key", record.Key);
                 Assert.Equal("my-value", record.Value);
@@ -436,14 +436,14 @@ select last_insert_id() as Id";
                     x.InsertToList("my-key", "my-value");
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from List").Single();
+                var recordCount = sql.Query<int>("select count(*) from HangfireList").Single();
 
                 Assert.Equal(2, recordCount);
             });
         }
 
         [Fact, CleanDatabase]
-        public void RemoveFromList_RemovesAllRecords_WithGivenKeyAndValue()
+        public void RemoveFromHangfireList_RemovesAllRecords_WithGivenKeyAndValue()
         {
             UseConnection(sql =>
             {
@@ -454,14 +454,14 @@ select last_insert_id() as Id";
                     x.RemoveFromList("my-key", "my-value");
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from List").Single();
+                var recordCount = sql.Query<int>("select count(*) from HangfireList").Single();
 
                 Assert.Equal(0, recordCount);
             });
         }
 
         [Fact, CleanDatabase]
-        public void RemoveFromList_DoesNotRemoveRecords_WithSameKey_ButDifferentValue()
+        public void RemoveFromHangfireList_DoesNotRemoveRecords_WithSameKey_ButDifferentValue()
         {
             UseConnection(sql =>
             {
@@ -471,14 +471,14 @@ select last_insert_id() as Id";
                     x.RemoveFromList("my-key", "different-value");
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from List").Single();
+                var recordCount = sql.Query<int>("select count(*) from HangfireList").Single();
 
                 Assert.Equal(1, recordCount);
             });
         }
 
         [Fact, CleanDatabase]
-        public void RemoveFromList_DoesNotRemoveRecords_WithSameValue_ButDifferentKey()
+        public void RemoveFromHangfireList_DoesNotRemoveRecords_WithSameValue_ButDifferentKey()
         {
             UseConnection(sql =>
             {
@@ -488,7 +488,7 @@ select last_insert_id() as Id";
                     x.RemoveFromList("different-key", "my-value");
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from List").Single();
+                var recordCount = sql.Query<int>("select count(*) from HangfireList").Single();
 
                 Assert.Equal(1, recordCount);
             });
@@ -508,7 +508,7 @@ select last_insert_id() as Id";
                     x.TrimList("my-key", 1, 2);
                 });
 
-                var records = sql.Query("select * from List").ToArray();
+                var records = sql.Query("select * from HangfireList").ToArray();
 
                 Assert.Equal(2, records.Length);
                 Assert.Equal("1", records[0].Value);
@@ -529,7 +529,7 @@ select last_insert_id() as Id";
                     x.TrimList("my-key", 1, 100);
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from List").Single();
+                var recordCount = sql.Query<int>("select count(*) from HangfireList").Single();
 
                 Assert.Equal(2, recordCount);
             });
@@ -546,7 +546,7 @@ select last_insert_id() as Id";
                     x.TrimList("my-key", 1, 100);
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from List").Single();
+                var recordCount = sql.Query<int>("select count(*) from HangfireList").Single();
 
                 Assert.Equal(0, recordCount);
             });
@@ -563,7 +563,7 @@ select last_insert_id() as Id";
                     x.TrimList("my-key", 1, 0);
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from List").Single();
+                var recordCount = sql.Query<int>("select count(*) from HangfireList").Single();
 
                 Assert.Equal(0, recordCount);
             });
@@ -580,7 +580,7 @@ select last_insert_id() as Id";
                     x.TrimList("another-key", 1, 0);
                 });
 
-                var recordCount = sql.Query<int>("select count(*) from List").Single();
+                var recordCount = sql.Query<int>("select count(*) from HangfireList").Single();
 
                 Assert.Equal(1, recordCount);
             });
@@ -622,7 +622,7 @@ select last_insert_id() as Id";
                 }));
 
                 var result = sql.Query(
-                    "select * from Hash where `Key` = @key",
+                    "select * from HangfireHash where `Key` = @key",
                     new { key = "some-hash" })
                     .ToDictionary(x => (string)x.Field, x => (string)x.Value);
 
@@ -657,7 +657,7 @@ select last_insert_id() as Id";
                 Commit(sql, x => x.RemoveHash("some-hash"));
 
                 // Assert
-                var count = sql.Query<int>("select count(*) from Hash").Single();
+                var count = sql.Query<int>("select count(*) from HangfireHash").Single();
                 Assert.Equal(0, count);
             });
         }
@@ -695,7 +695,7 @@ select last_insert_id() as Id";
 
                 Commit(sql, x => x.AddRangeToSet("my-set", items));
 
-                var records = sql.Query<string>(@"select `Value` from `Set` where `Key` = N'my-set'");
+                var records = sql.Query<string>(@"select `Value` from `HangfireSet` where `Key` = N'my-set'");
                 Assert.Equal(items, records);
             });
         }
@@ -714,7 +714,7 @@ select last_insert_id() as Id";
         public void RemoveSet_RemovesASet_WithAGivenKey()
         {
             const string arrangeSql = @"
-insert into `Set` (`Key`, `Value`, Score) values (@key, @value, 0.0)";
+insert into `HangfireSet` (`Key`, `Value`, Score) values (@key, @value, 0.0)";
 
             UseConnection(sql =>
             {
@@ -726,7 +726,7 @@ insert into `Set` (`Key`, `Value`, Score) values (@key, @value, 0.0)";
 
                 Commit(sql, x => x.RemoveSet("set-1"));
 
-                var record = sql.Query("select * from `Set`").Single();
+                var record = sql.Query("select * from `HangfireSet`").Single();
                 Assert.Equal("set-2", record.Key);
             });
         }
@@ -747,7 +747,7 @@ insert into `Set` (`Key`, `Value`, Score) values (@key, @value, 0.0)";
         public void ExpireHash_SetsExpirationTimeOnAHash_WithGivenKey()
         {
             const string arrangeSql = @"
-insert into Hash (`Key`, `Field`)
+insert into HangfireHash (`Key`, `Field`)
 values (@key, @field)";
 
             UseConnection(sql =>
@@ -763,7 +763,7 @@ values (@key, @field)";
                 Commit(sql, x => x.ExpireHash("hash-1", TimeSpan.FromMinutes(60)));
 
                 // Assert
-                var records = sql.Query("select * from Hash").ToDictionary(x => (string)x.Key, x => (DateTime?)x.ExpireAt);
+                var records = sql.Query("select * from HangfireHash").ToDictionary(x => (string)x.Key, x => (DateTime?)x.ExpireAt);
                 Assert.True(DateTime.UtcNow.AddMinutes(59) < records["hash-1"]);
                 Assert.True(records["hash-1"] < DateTime.UtcNow.AddMinutes(61));
                 Assert.Null(records["hash-2"]);
@@ -786,7 +786,7 @@ values (@key, @field)";
         public void ExpireSet_SetsExpirationTime_OnASet_WithGivenKey()
         {
             const string arrangeSql = @"
-insert into `Set` (`Key`, `Value`, Score)
+insert into `HangfireSet` (`Key`, `Value`, Score)
 values (@key, @value, 0.0)";
 
             UseConnection(sql =>
@@ -802,7 +802,7 @@ values (@key, @value, 0.0)";
                 Commit(sql, x => x.ExpireSet("set-1", TimeSpan.FromMinutes(60)));
 
                 // Assert
-                var records = sql.Query("select * from `Set`").ToDictionary(x => (string)x.Key, x => (DateTime?)x.ExpireAt);
+                var records = sql.Query("select * from `HangfireSet`").ToDictionary(x => (string)x.Key, x => (DateTime?)x.ExpireAt);
                 Assert.True(DateTime.UtcNow.AddMinutes(59) < records["set-1"]);
                 Assert.True(records["set-1"] < DateTime.UtcNow.AddMinutes(61));
                 Assert.Null(records["set-2"]);
@@ -825,7 +825,7 @@ values (@key, @value, 0.0)";
         public void ExpireList_SetsExpirationTime_OnAList_WithGivenKey()
         {
             const string arrangeSql = @"
-insert into List (`Key`) values (@key)";
+insert into HangfireList (`Key`) values (@key)";
 
             UseConnection(sql =>
             {
@@ -840,7 +840,7 @@ insert into List (`Key`) values (@key)";
                 Commit(sql, x => x.ExpireList("list-1", TimeSpan.FromMinutes(60)));
 
                 // Assert
-                var records = sql.Query("select * from List").ToDictionary(x => (string)x.Key, x => (DateTime?)x.ExpireAt);
+                var records = sql.Query("select * from HangfireList").ToDictionary(x => (string)x.Key, x => (DateTime?)x.ExpireAt);
                 Assert.True(DateTime.UtcNow.AddMinutes(59) < records["list-1"]);
                 Assert.True(records["list-1"] < DateTime.UtcNow.AddMinutes(61));
                 Assert.Null(records["list-2"]);
@@ -863,7 +863,7 @@ insert into List (`Key`) values (@key)";
         public void PersistHash_ClearsExpirationTime_OnAGivenHash()
         {
             const string arrangeSql = @"
-insert into Hash (`Key`, `Field`, ExpireAt)
+insert into HangfireHash (`Key`, `Field`, ExpireAt)
 values (@key, @field, @expireAt)";
 
             UseConnection(sql =>
@@ -879,7 +879,7 @@ values (@key, @field, @expireAt)";
                 Commit(sql, x => x.PersistHash("hash-1"));
 
                 // Assert
-                var records = sql.Query("select * from Hash").ToDictionary(x => (string)x.Key, x => (DateTime?)x.ExpireAt);
+                var records = sql.Query("select * from HangfireHash").ToDictionary(x => (string)x.Key, x => (DateTime?)x.ExpireAt);
                 Assert.Null(records["hash-1"]);
                 Assert.NotNull(records["hash-2"]);
             });
@@ -901,7 +901,7 @@ values (@key, @field, @expireAt)";
         public void PersistSet_ClearsExpirationTime_OnAGivenHash()
         {
             const string arrangeSql = @"
-insert into `Set` (`Key`, `Value`, ExpireAt, Score)
+insert into `HangfireSet` (`Key`, `Value`, ExpireAt, Score)
 values (@key, @value, @expireAt, 0.0)";
 
             UseConnection(sql =>
@@ -917,7 +917,7 @@ values (@key, @value, @expireAt, 0.0)";
                 Commit(sql, x => x.PersistSet("set-1"));
 
                 // Assert
-                var records = sql.Query("select * from `Set`").ToDictionary(x => (string)x.Key, x => (DateTime?)x.ExpireAt);
+                var records = sql.Query("select * from `HangfireSet`").ToDictionary(x => (string)x.Key, x => (DateTime?)x.ExpireAt);
                 Assert.Null(records["set-1"]);
                 Assert.NotNull(records["set-2"]);
             });
@@ -939,7 +939,7 @@ values (@key, @value, @expireAt, 0.0)";
         public void PersistList_ClearsExpirationTime_OnAGivenHash()
         {
             const string arrangeSql = @"
-insert into List (`Key`, ExpireAt)
+insert into HangfireList (`Key`, ExpireAt)
 values (@key, @expireAt)";
 
             UseConnection(sql =>
@@ -955,7 +955,7 @@ values (@key, @expireAt)";
                 Commit(sql, x => x.PersistList("list-1"));
 
                 // Assert
-                var records = sql.Query("select * from List").ToDictionary(x => (string)x.Key, x => (DateTime?)x.ExpireAt);
+                var records = sql.Query("select * from HangfireList").ToDictionary(x => (string)x.Key, x => (DateTime?)x.ExpireAt);
                 Assert.Null(records["list-1"]);
                 Assert.NotNull(records["list-2"]);
             });
