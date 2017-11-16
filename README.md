@@ -1,7 +1,7 @@
 # Hangfire MySql Storage Implementation
 [![Latest version](https://img.shields.io/nuget/v/Hangfire.MySqlStorage.TablesPrefixedWithSchema.svg)](https://www.nuget.org/packages/Hangfire.MySqlStorage.TablesPrefixedWithSchema/) 
 
-This is exactly the same package as https://github.com/arnoldasgudas/Hangfire.MySqlStorage but with 'Hangfire' prefixed before all table names, as the original SQL Server package had a schema dedicated for Hangfire, and MySQL dopesn't support schemas in the same way. This helps identify all tables related to hangfire and almost eliminates the possibility of a table conflicting with your applciation.
+> *This is exactly the same package as https://github.com/arnoldasgudas/Hangfire.MySqlStorage but with 'Hangfire' prefixed before all table names, as the original SQL Server package had a schema dedicated for Hangfire, and MySQL dopesn't support schemas in the same way. This helps identify all tables related to hangfire and almost eliminates the possibility of a table conflicting with your application.*
 
 MySql storage implementation of [Hangfire](http://hangfire.io/) - fire-and-forget, delayed and recurring tasks runner for .NET. Scalable and reliable background job runner. Supports multiple servers, CPU and I/O intensive, long-running and short-running jobs.
 
