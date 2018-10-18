@@ -282,13 +282,13 @@ namespace Hangfire.MySql
                     .Query<string>(@"
 select `Value` 
 from (
-	    select `Value`, @rownum := @rownum + 1 AS rank
+	    select `Value`, @rownum := @rownum + 1 AS rankValue
 	    from `HangfireSet`,
             (select @rownum := 0) r 
         where `Key` = @key
         order by Id
      ) ranked
-where ranked.rank between @startingFrom and @endingAt",
+where ranked.rankValue between @startingFrom and @endingAt",
                         new {key = key, startingFrom = startingFrom + 1, endingAt = endingAt + 1})
                     .ToList());
         }
@@ -419,13 +419,13 @@ where `Key` = @key) as s";
             string query = @"
 select `Value` 
 from (
-        select `Value`, @rownum := @rownum + 1 AS rank
+        select `Value`, @rownum := @rownum + 1 AS rankValue
 	    from `HangfireList`,
             (select @rownum := 0) r
         where `Key` = @key
         order by Id desc
      ) ranked
-where ranked.rank between @startingFrom and @endingAt";
+where ranked.rankValue between @startingFrom and @endingAt";
             return
                 _storage
                     .UseConnection(connection =>
